@@ -1,7 +1,37 @@
 #include <array.au3>
 #include <File.au3>
+#include <GUIConstantsEx.au3>
+#include <HotKeyInput.au3>
+#include <HotKey_21b.au3>
 
-Global $PIDfound = 0, $PIDlocation = "", $LogLocation = "", $LogFile = "", $aStatus[1][2] = [["0", "0"]]
+Opt("TrayAutoPause", 0)
+
+Global $PIDfound = 0, $PIDlocation = "", $LogLocation = "", $LogFile = "", $aStatus[1][2] = [["0", "0"]], $Form, $HKI1, $HKI2, $Button, $Text, $running = 1
+
+_KeyLock(0x062E) ; we do want Ctrl+Alt+Del to be locked away from this script ;)
+$Form = GUICreate('RES pirate quality', 300, 160)
+$HKI1 = _GUICtrlHKI_Create(0, 56, 55, 230, 20)
+$hk = IniRead(@ScriptDir & "\config.ini", "options", "hotkey", 0)
+If StringLen($hk) = 6 And StringRegExp($hk, "0x[0-9A-F]{4}", 0) Then _GUICtrlHKI_SetHotKey($HKI1, $hk)
+
+GUICtrlCreateLabel('Hotkey:', 10, 58, 44, 14)
+GUICtrlCreateLabel('Click on Input box and hold a combination of keys.' & @CR & 'Press OK to save the hotkey and proceed.', 10, 10, 280, 28)
+$Button = GUICtrlCreateButton('OK', 110, 124, 80, 23)
+GUICtrlSetState(-1, BitOR($GUI_DEFBUTTON, $GUI_FOCUS))
+GUISetState()
+
+While 1
+	Switch GUIGetMsg()
+		Case $GUI_EVENT_CLOSE
+			Exit
+		Case $Button
+			$hk = '0x' & StringRight(Hex(_GUICtrlHKI_GetHotKey($HKI1)), 4)
+			$test = IniWrite(@ScriptDir & "\config.ini", "options", "hotkey", $hk)
+			_HotKey_Assign($hk, "_toggle", $HK_FLAG_NOREPEAT)
+			GUIDelete($Form)
+			ExitLoop
+	EndSwitch
+WEnd
 
 While 1
 	Sleep(500)
@@ -33,6 +63,12 @@ While 1
 	If Not ($LogFile = "") Then _checkLog()
 WEnd
 
+Func _toggle()
+	$running *= -1
+	If $running = -1 Then _TalkOBJ("mute")
+	If $running = 1 Then _TalkOBJ("unmute")
+EndFunc   ;==>_toggle
+
 Func _checkLog()
 	$aSettings = IniReadSection(@ScriptDir & "\config.ini", "settings"); [$i][0] holds the item to search for (= key), [$i][1] holds the text to say when that item was found (= value)
 	If Not IsArray($aSettings) Then Return 0
@@ -51,11 +87,11 @@ Func _checkLog()
 			ReDim $aStatus[UBound($aStatus) + 1][2]
 			$aStatus[UBound($aStatus) - 1][0] = $aSettings[$i][0]
 			$aStatus[UBound($aStatus) - 1][1] = $sTime
-			_TalkOBJ($aSettings[$i][1]) ; notify player
+			If $running = 1 Then _TalkOBJ($aSettings[$i][1]) ; notify player
 		Else ; just update the time if we already have an entry for the key
 			If $aStatus[$index][1] <> $sTime Then
 				$aStatus[$index][1] = $sTime
-				_TalkOBJ($aSettings[$i][1]) ; notify player
+				If $running = 1 Then _TalkOBJ($aSettings[$i][1]) ; notify player
 			EndIf
 		EndIf
 	Next
