@@ -6,9 +6,9 @@
 
 Opt("TrayAutoPause", 0)
 
-Global $PIDfound = 0, $PIDlocation = "", $ExeLocation = "", $LogLocation = "", $LogFile = "", $aStatus[1][2] = [["0", "0"]], $Form, $HKI1, $Button, $running = 1, $m_speakFlags = BitOR(1,2), $voice = ObjCreate("SAPI.SpVoice")
+Global $PIDfound = 0, $PIDlocation = "", $ExeLocation = "", $LogLocation = "", $LogFile = "", $aStatus[1][2] = [["0", "0"]], $Form, $HKI1, $HKI2, $Button, $Text, $running = 1
 
-Global $title = 'RES pirate quality v1.2'
+global $title = 'RES pirate quality v1.2'
 
 _KeyLock(0x062E) ; we do want Ctrl+Alt+Del to be locked away from this script ;)
 $Form = GUICreate($title, 300, 160)
@@ -41,7 +41,7 @@ While 1
 	If $PIDfound = 0 And ProcessExists("elitedangerous32.exe") Then
 		$aProcessList = ProcessList("elitedangerous32.exe")
 		If $aProcessList[0][0] > 1 Then ; running multiple instances of E:D is bad since we can't provide reliable info if there are multiple scenarios running
-			MsgBox(16, $title, "Error" & @CRLF & @CRLF & "Elite Dangerous has multiple instances running. Cannot continue.")
+			MsgBox(16, $title, "Error" & @crlf & @crlf & "Elite Dangerous has multiple instances running. Cannot continue.")
 			Exit
 		EndIf
 		$PIDfound = $aProcessList[1][1]
@@ -51,12 +51,12 @@ While 1
 			$ExeLocation &= $pathsplit[$i] & "\"
 		Next
 		$LogLocation = $ExeLocation & "Logs"
-		If Not FileExists($LogLocation) Then ; just in case the Logs dir is not there for some reason
-			MsgBox(16, $title, "Error" & @CRLF & @CRLF & "Logs path not found, cannot continue.")
+		if not fileexists($LogLocation) Then ; just in case the Logs dir is not there for some reason
+			msgbox(16, $title, "Error" & @crlf & @crlf & "Logs path not found, cannot continue.")
 			Exit
 		EndIf
-		If Not FileExists($ExeLocation & "AppConfig.xml") Then
-			MsgBox(64, $title, "Note" & @CRLF & @CRLF & "AppConfig.xml not found, please make sure you enabled verbose logging in Elite Dangerous manually.")
+		if not fileexists($ExeLocation & "AppConfig.xml") Then
+			msgbox(64, $title, "Note" & @crlf & @crlf & "AppConfig.xml not found, please make sure you enabled verbose logging in Elite Dangerous manually.")
 		Else
 			_verboseLogging()
 		EndIf
@@ -87,10 +87,10 @@ Func _verboseLogging()
 				If $return[0] = 1 Then
 					;_FileWriteFromArray($ExeLocation & "AppConfig.xml", $aContent)
 					Return 1
-				Else
+				else
 					$aContent[$i] = StringRegExpReplace($aContent[$i], '".*(\d).*"', '"1"')
 					_FileWriteFromArray($ExeLocation & "AppConfig.xml", $aContent)
-					MsgBox(64, $title, "Note" & @CRLF & @CRLF & "Verbose logging has just been automatically enabled. Please remember to restart Elite Dangerous.")
+					msgbox(64, $title, "Note" & @crlf & @crlf & "Verbose logging was enabled in AppConfig.xml. Please remember to restart Elite Dangerous.")
 					Return 0
 				EndIf
 
@@ -99,9 +99,7 @@ Func _verboseLogging()
 		If $i = $iEnd Then
 			_ArrayInsert($aContent, $iStart + 1, @TAB & '  VerboseLogging="1"')
 			_FileWriteFromArray($ExeLocation & "AppConfig.xml", $aContent)
-
-			MsgBox(64, $title, "Note" & @CRLF & @CRLF & "Verbose logging has just been automatically enabled. Please remember to restart Elite Dangerous.")
-
+			msgbox(64, $title, "Note" & @crlf & @crlf & "Verbose logging was enabled in AppConfig.xml. Please remember to restart Elite Dangerous.")
 			Return 2
 		EndIf
 	Next
@@ -110,8 +108,8 @@ EndFunc   ;==>_verboseLogging
 
 Func _toggle()
 	$running *= -1
-	If $running = -1 Then _speak("mute")
-	If $running = 1 Then _speak("unmute")
+	If $running = -1 Then _TalkOBJ("mute")
+	If $running = 1 Then _TalkOBJ("unmute")
 EndFunc   ;==>_toggle
 
 Func _checkLog()
@@ -132,11 +130,11 @@ Func _checkLog()
 			ReDim $aStatus[UBound($aStatus) + 1][2]
 			$aStatus[UBound($aStatus) - 1][0] = $aSettings[$i][0]
 			$aStatus[UBound($aStatus) - 1][1] = $sTime
-			If $running = 1 Then _speak($aSettings[$i][1]) ; notify player
+			If $running = 1 Then _TalkOBJ($aSettings[$i][1]) ; notify player
 		Else ; just update the time if we already have an entry for the key
 			If $aStatus[$index][1] <> $sTime Then
 				$aStatus[$index][1] = $sTime
-				If $running = 1 Then _speak($aSettings[$i][1]) ; notify player
+				If $running = 1 Then _TalkOBJ($aSettings[$i][1]) ; notify player
 			EndIf
 		EndIf
 	Next
@@ -165,6 +163,8 @@ Func _ProcessGetLocation($iPID)
 	Return $aReturn[3]
 EndFunc   ;==>_ProcessGetLocation
 
-Func _speak($oSpeech_msg)
-	if IsObj($voice) Then $voice.Speak($oSpeech_msg, $m_speakFlags)
-EndFunc   ;==>Speak
+Func _TalkOBJ($s_text)
+	Local $o_speech = ObjCreate("SAPI.SpVoice")
+	$o_speech.Speak($s_text)
+	$o_speech = ""
+EndFunc   ;==>_TalkOBJ
