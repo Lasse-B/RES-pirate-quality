@@ -1,8 +1,8 @@
 #include <array.au3>
 #include <File.au3>
 #include <GUIConstantsEx.au3>
-#include <HotKeyInput.au3>
-#include <HotKey_21b.au3>
+#include <includes\HotKeyInput.au3>
+#include <includes\HotKey_21b.au3>
 
 Opt("TrayAutoPause", 0)
 
@@ -90,18 +90,17 @@ Func _verboseLogging()
 				Else
 					$aContent[$i] = StringRegExpReplace($aContent[$i], '".*(\d).*"', '"1"')
 					_FileWriteFromArray($ExeLocation & "AppConfig.xml", $aContent)
+					_speak("Note" & @CRLF & @CRLF & "Verbose logging has just been automatically enabled. Please remember to restart Elite Dangerous.")
 					MsgBox(64, $title, "Note" & @CRLF & @CRLF & "Verbose logging has just been automatically enabled. Please remember to restart Elite Dangerous.")
 					Return 0
 				EndIf
-
 			EndIf
 		EndIf
 		If $i = $iEnd Then
 			_ArrayInsert($aContent, $iStart + 1, @TAB & '  VerboseLogging="1"')
 			_FileWriteFromArray($ExeLocation & "AppConfig.xml", $aContent)
-
+			_speak("Note" & @CRLF & @CRLF & "Verbose logging has just been automatically enabled. Please remember to restart Elite Dangerous.")
 			MsgBox(64, $title, "Note" & @CRLF & @CRLF & "Verbose logging has just been automatically enabled. Please remember to restart Elite Dangerous.")
-
 			Return 2
 		EndIf
 	Next
